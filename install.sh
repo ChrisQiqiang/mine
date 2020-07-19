@@ -46,7 +46,7 @@ update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.9 200 && \
 cd /root
 git clone --recursive --branch v1.5.x https://github.com/apache/incubator-mxnet.git
 cd incubator-mxnet && git reset --hard 75a9e187d00a8b7ebc71412a02ed0e3ae489d91f
-
+pip install mxnet-cu90==1.5.0
 cd /root
 pip install bayesian-optimization six
 cd /usr/local/cuda/lib64 && ln -s stubs/libcuda.so libcuda.so.1
