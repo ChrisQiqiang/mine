@@ -85,7 +85,6 @@ class ScheduledKVStore(mx.kvstore.KVStore):
             immediate=self._immediate,
             step=self._step,
             rank=self._rank,
-            ignore_sparse=ignore_sparse,
             key_index=self._str_key_int[key],
         )
         core.post(task)
@@ -125,22 +124,3 @@ class ScheduledKVStore(mx.kvstore.KVStore):
                 key_index=self._str_key_int[key],
             )
             core.post(task)
-            # if key == self._first_key:
-            #     self._step += 1
-
-            # # Merge push and pull into one task
-            # (_key, _value, _priority) = self._push_buffer[key]
-            # task = KVStoreTask(
-            #     key,
-            #     (_value, out),
-            #     "push_pull",
-            #     priority=-priority,
-            #     comm=self._kvstore,
-            #     immediate=self._immediate,
-            #     step=self._step,
-            #     rank=self._rank,
-            #     ignore_sparse=ignore_sparse,
-            #     key_index=self._str_key_int[key],
-            # )
-            # del self._push_buffer[key]
-            # core.post(task)
