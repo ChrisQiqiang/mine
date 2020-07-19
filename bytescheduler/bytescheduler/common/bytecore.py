@@ -134,11 +134,11 @@ class ByteCore(object):
             self._logger.warning("Core is already shutdown.")
             return
         if wait_for_all:
-            self._queue.put((sys.maxint, self._commands['EXIT'], None))
+            self._queue.put((sys.maxsize, self._commands['EXIT'], None))
         else:
-            self._queue.put((-sys.maxint, self._commands['EXIT'], None))
+            self._queue.put((-sys.maxsize, self._commands['EXIT'], None))
         with self._condition:
-            self._credit = sys.maxint
+            self._credit = sys.maxsize
             self._condition.notify_all()
         self._scheduler.join()
         self._is_started = False
