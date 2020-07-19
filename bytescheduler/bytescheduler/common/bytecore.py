@@ -177,12 +177,12 @@ class ByteCore(object):
             if task.is_immediate():
                 # The callback runs after an immediate task is finished.
                 def _end_callback(t, self):
-                    with self._condition:
-                        self._running.remove(t)
+                    with self._condition:        
                         if task.op == "push":
-                            self._push_running.remove(task)
+                            self._push_running.remove(t)
                         if task.op == "pull":
-                            self._pull_running.remove(task)
+                            self._pull_running.remove(t)
+                        self._running.remove(t)
                         self._finished[t.name] = t
                     self._profiler.put(t.name, t.op + 'COMMUNICATION', 'E')
 
@@ -190,9 +190,9 @@ class ByteCore(object):
                     with self._condition:
                         self._running.add(t)
                         if task.op == "push":
-                            self._push_running.add(task)
+                            self._push_running.add(t)
                         if task.op == "pull":
-                            self._pull_running.add(task)
+                            self._pull_running.add(t)
                     if os.getenv("CHRIS_INFO",0) == 1:
                         self._logger.info(t.name, " begin " , t.op, "push_size: ", str(len(self._push_running)),"  pull_size: ", str(len(self._pull_running)) )      
                     self._profiler.put(t.name, t.op + 'COMMUNICATION', 'B')
