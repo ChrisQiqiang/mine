@@ -58,4 +58,4 @@ RUN git clone https://github.com/ChrisQiqiang/mine.git && \
 RUN rm -f /usr/local/cuda/lib64/libcuda.so.1
 
 # Examples
-WORKDIR /root/byteps/bytescheduler/examples/mxnet-image-classification
+WORKDIR /root/mine/bytescheduler/examples/mxnet-image-classification

@@ -18,7 +18,7 @@ import traceback
 
 # Manually add MXNet include path
 # TODO: find this path automatically
-MXNET_ROOT = os.getenv("MXNET_ROOT", "/home/ubuntu/mxnet-incubator/")
+MXNET_ROOT = os.getenv("MXNET_ROOT", "/home/ubuntu/incubator-mxnet/")
 os.environ["MXNET_INCLUDE_PATH"] = os.path.join(MXNET_ROOT, "include/")
 
 # TODO: check MXNet config.mk or Makefile
