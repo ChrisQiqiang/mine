@@ -18,14 +18,13 @@ import traceback
 
 # Manually add MXNet include path
 # TODO: find this path automatically
-MXNET_ROOT = os.getenv("MXNET_ROOT", "/root/mxnet-incubator/")
+MXNET_ROOT = os.getenv("MXNET_ROOT", "/home/ubuntu/mxnet-incubator/")
 os.environ["MXNET_INCLUDE_PATH"] = os.path.join(MXNET_ROOT, "include/")
 
 # TODO: check MXNet config.mk or Makefile
 os.environ["MXNET_USE_MKLDNN"] = "0"
 
 mxnet_lib = Extension('bytescheduler.mxnet.c_lib', [])
-pytorch_lib = Extension('bytescheduler.pytorch.c_lib', [])
 
 # Package meta-data.
 NAME = 'bytescheduler'
@@ -343,82 +342,6 @@ def build_mx_extension(build_ext, options):
     build_ext.build_extension(mxnet_lib)
 
 
-def check_torch_version():
-    try:
-        import torch
-        if torch.__version__ < '1.0.0':
-            raise DistutilsPlatformError(
-                'Your torch version %s is outdated.  '
-                'Horovod requires torch>=1.0.0' % torch.__version__)
-        return torch.__version__
-    except ImportError:
-            print('import torch failed, is it installed?\n\n%s' % traceback.format_exc())
-
-
-def is_torch_cuda(build_ext, include_dirs, extra_compile_args):
-    try:
-        from torch.utils.cpp_extension import include_paths
-        test_compile(build_ext, 'test_torch_cuda', include_dirs=include_dirs + include_paths(cuda=True),
-                     extra_compile_preargs=extra_compile_args, code=textwrap.dedent('''\
-            #include <THC/THC.h>
-            void test() {
-            }
-            '''))
-        return True
-    except (CompileError, LinkError, EnvironmentError):
-        print('INFO: Above error indicates that this PyTorch installation does not support CUDA.')
-        return False
-
-
-def build_torch_extension(build_ext, options, torch_version):
-    have_cuda = is_torch_cuda(build_ext, include_dirs=options['INCLUDES'],
-                                 extra_compile_args=options['COMPILE_FLAGS'])
-    if not have_cuda and check_macro(options['MACROS'], 'HAVE_CUDA'):
-        raise DistutilsPlatformError(
-            'Bytescheduler build with GPU support was requested, but this PyTorch '
-            'installation does not support CUDA.')
-
-    # Update HAVE_CUDA to mean that PyTorch supports CUDA. Internally, we will be checking
-    # HOROVOD_GPU_(ALLREDUCE|ALLGATHER|BROADCAST) to decide whether we should use GPU
-    # version or transfer tensors to CPU memory for those operations.
-    updated_macros = set_macro(
-        options['MACROS'], 'HAVE_CUDA', str(int(have_cuda)))
-
-    # Export TORCH_VERSION equal to our representation of torch.__version__. Internally it's
-    # used for backwards compatibility checks.
-    updated_macros = set_macro(
-        updated_macros, 'TORCH_VERSION', str(torch_version))
-
-    # Always set _GLIBCXX_USE_CXX11_ABI, since PyTorch can only detect whether it was set to 1.
-    import torch
-    updated_macros = set_macro(updated_macros, '_GLIBCXX_USE_CXX11_ABI',
-                               str(int(torch.compiled_with_cxx11_abi())))
-
-    # PyTorch requires -DTORCH_API_INCLUDE_EXTENSION_H
-    updated_macros = set_macro(
-        updated_macros, 'TORCH_API_INCLUDE_EXTENSION_H', '1')
-
-    if have_cuda:
-        from torch.utils.cpp_extension import CUDAExtension as TorchExtension
-    else:
-        # CUDAExtension fails with `ld: library not found for -lcudart` if CUDA is not present
-        from torch.utils.cpp_extension import CppExtension as TorchExtension
-    ext = TorchExtension(pytorch_lib.name,
-                         define_macros=updated_macros,
-                         include_dirs=options['INCLUDES'],
-                         sources=options['SOURCES'] + ['bytescheduler/pytorch/c_lib.cc',
-                                                       'bytescheduler/pytorch/ready_event.cc',
-                                                       'bytescheduler/pytorch/cuda_util.cc'],
-                         extra_compile_args=options['COMPILE_FLAGS'],
-                         extra_link_args=options['LINK_FLAGS'],
-                         library_dirs=options['LIBRARY_DIRS'],
-                         libraries=options['LIBRARIES'])
-
-    # Patch an existing torch_mpi_lib_v2 extension object.
-    for k, v in ext.__dict__.items():
-        pytorch_lib.__dict__[k] = v
-    build_ext.build_extension(pytorch_lib)
-
 
 # run the customize_compiler
 class custom_build_ext(build_ext):
@@ -434,19 +357,6 @@ class custom_build_ext(build_ext):
                 if not os.environ.get('BYTESCHEDULER_WITH_MXNET'):
                     print('INFO: Unable to build MXNet plugin, will skip it.\n\n'
                           '%s' % traceback.format_exc())
-                    built_plugins.append(False)
-                else:
-                    raise
-        if not int(os.environ.get('BYTESCHEDULER_WITHOUT_PYTORCH', 0)):
-            try:
-                torch_version = check_torch_version()
-                build_torch_extension(self, options, torch_version)
-                built_plugins.append(True)
-                print('INFO: PyTorch extension is built successfully.')
-            except:
-                if not int(os.environ.get('BYTESCHEDULER_WITH_PYTORCH', 0)):
-                    print('INFO: Unable to build PyTorch plugin, will skip it.\n\n'
-                        '%s' % traceback.format_exc())
                     built_plugins.append(False)
                 else:
                     raise
@@ -485,13 +395,12 @@ setup(
         'Programming Language :: Python :: Implementation :: CPython',
         'Programming Language :: Python :: Implementation :: PyPy'
     ],
-    ext_modules=[mxnet_lib, pytorch_lib],
+    ext_modules=[mxnet_lib],
     # $ setup.py publish support.
     cmdclass={
         'upload': UploadCommand,
         'build_ext': custom_build_ext
     },
-    # cffi is required for PyTorch
     # If cffi is specified in setup_requires, it will need libffi to be installed on the machine,
     # which is undesirable.  Luckily, `install` action will install cffi before executing build,
     # so it's only necessary for `build*` or `bdist*` actions.
