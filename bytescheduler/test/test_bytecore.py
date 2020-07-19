@@ -5,7 +5,6 @@ import time
 import sys
 import logging
 from bytescheduler.common.bytecore import core
-from .test_bytetask import TestTask
 from bytescheduler.common.bytetask import ByteTask
 
 class TestTask(ByteTask):
