@@ -31,7 +31,7 @@ class ByteCore(object):
             self._logger = logger
 
         # A priority queue of ByteTask, tasks are sorted according to its priority.
-        if os.genenv("PRIORITY_ENABLE", 1) == 0:
+        if os.getenv("PRIORITY_ENABLE", 1) == 0:
             self._queue = queue.SimpleQueue()
         else:
             self._queue = queue.PriorityQueue()
@@ -187,12 +187,22 @@ class ByteCore(object):
                 def _end_callback(t, self):
                     with self._condition:
                         self._running.remove(t)
+                        if task.op == "push":
+                            self._push_running.remove(task)
+                        if task.op == "pull":
+                            self._pull_running.remove(task)
                         self._finished[t.name] = t
                     self._profiler.put(t.name, t.op + 'COMMUNICATION', 'E')
 
                 for t in subtasks:
                     with self._condition:
                         self._running.add(t)
+                        if task.op == "push":
+                            self._push_running.add(task)
+                        if task.op == "pull":
+                            self._pull_running.add(task)
+                    if os.getenv("CHRIS_INFO",0) == 1:
+                        self._logger.info(t.name, " begin " , t.op, "push_size: ", str(len(self._push_running)),"  pull_size: ", str(len(self._pull_running)) )      
                     self._profiler.put(t.name, t.op + 'COMMUNICATION', 'B')
                     t.immediate_do(callback=_end_callback, callback_context=self)
                 return True
@@ -227,6 +237,10 @@ class ByteCore(object):
                 if self._credit > self._credit_limit:
                     self._credit = self._credit_limit
                 self._running.remove(task)
+                if task.op == "push":
+                    self._push_running.remove(task)
+                if task.op == "pull":
+                    self._pull_running.remove(task)
                 self._condition.notify_all()
             self._finished[task.name] = task
             self._profiler.put(task.name, task.op + 'COMMUNICATION', 'E')
@@ -253,6 +267,10 @@ class ByteCore(object):
                 self._profiler.put(task.name, task.op + 'QUEUE', 'E')
                 with self._condition:
                     self._running.add(task)
+                    if task.op == "push":
+                        self._push_running.add(task)
+                    if task.op == "pull":
+                        self._pull_running.add(task)
                     self._credit -= task.tensor_size()
                 task.do(callback=_end_callback, callback_context=self)
                 self._profiler.put(task.name, task.op + 'COMMUNICATION', 'B')
