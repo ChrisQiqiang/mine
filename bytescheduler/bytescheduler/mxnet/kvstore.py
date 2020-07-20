@@ -123,4 +123,5 @@ class ScheduledKVStore(mx.kvstore.KVStore):
                 ignore_sparse=ignore_sparse,
                 key_index=self._str_key_int[key],
             )
+            del self._push_buffer[key]
             core.post(task)

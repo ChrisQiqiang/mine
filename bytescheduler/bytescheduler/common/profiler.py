@@ -79,6 +79,7 @@ class Profiler(object):
             ))
         else:
             if tensor + activity in self._cache:
+                # print(tensor+activity)
                 assert self._cache[tensor+activity] is None
             self._cache[tensor+activity] = dict(
                 name=activity,
