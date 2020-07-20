@@ -264,7 +264,7 @@ class ByteCore(object):
                     self._credit -= task.tensor_size()
                 task.do(callback=_end_callback, callback_context=self)
                 if int(os.getenv("CHRIS_INFO",0)) == 1:
-                        self._logger.info(task.name, " begin " , task.op, "push_size: ", str(len(self._push_running)),"  pull_size: ", str(len(self._pull_running)) )  
+                        self._logger.info(str(task.name) + " begin " + str(task.op) + "push_size: " + str(len(self._push_running))+ "  pull_size: "+  str(len(self._pull_running)) )  
                 self._profiler.put(task.name, task.op + 'COMMUNICATION', 'B')
 
 # Init a core once the module is imported
