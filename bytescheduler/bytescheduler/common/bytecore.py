@@ -30,7 +30,7 @@ class ByteCore(object):
             self._logger = logger
 
         # A priority queue of ByteTask, tasks are sorted according to its priority.
-        if os.getenv("PRIORITY_ENABLE", 1) == 0:
+        if int(os.getenv("PRIORITY_ENABLE", 1)) == 0:
             self._queue = queue.SimpleQueue()
         else:
             self._queue = queue.PriorityQueue()
@@ -263,7 +263,7 @@ class ByteCore(object):
                         self._pull_running.add(task)
                     self._credit -= task.tensor_size()
                 task.do(callback=_end_callback, callback_context=self)
-                if os.getenv("CHRIS_INFO",0) == 1:
+                if int(os.getenv("CHRIS_INFO",0)) == 1:
                         self._logger.info(task.name, " begin " , task.op, "push_size: ", str(len(self._push_running)),"  pull_size: ", str(len(self._pull_running)) )  
                 self._profiler.put(task.name, task.op + 'COMMUNICATION', 'B')
 
